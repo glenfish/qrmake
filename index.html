@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Code Generator & Reader</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        min-height: 98vh;
+      }
+      #form-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgb(208, 208, 208);
+        padding: 40px;
+        border-radius: 8px;
+        width: 360px;
+        margin: auto;
+      }
+      /* Basic styling for QR codes */
+      .qr-code {
+        width: 400px;
+        height: 400px;
+        margin: 10px;
+        display: inline-block;
+      }
+      #downloadGifButton {
+        position: relative;
+        top: -70px;
+        margin: auto;
+        text-align: center;
+      }
+      .hide {
+        display: none !important;
+      }
+      #qrCodeOutput {
+        background-color: rgb(255, 255, 255);
+        color: rgb(57, 57, 57);
+        font-size: 22px;
+        max-width: 900px;
+        margin-top: 10px;
+        letter-spacing: 2px;
+        max-height: 400px;
+      }
+      p {
+        font-family: "Courier New", Courier, monospace;
+        text-align: left;
+        letter-spacing: -1px;
+      }
+      .tooltip {
+        display: none;
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 30px;
+        background-color: #ffffff;
+        color: #000000;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        font-size: 22px;
+        font-family: "Courier New", Courier, monospace;
+        min-width: 450px;
+        text-align: center;
+      }
+
+      .tooltip.show {
+        display: block;
+        opacity: 1;
+      }
+      hr {
+        width: 100%;
+        border: 1px solid rgb(208, 208, 208);
+      }
+      button {
+        padding: 10px;
+        font-size: 18px;
+        border-radius: 5px;
+        border: none;
+        background-color: #4caf50;
+        color: white;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      input[type="text"] {
+        padding: 8px;
+        font-size: 16px;
+        width: 95px;
+      }
+      input[type="file"] {
+        padding: 22px;
+        font-size: 26px;
+        width: 135px;
+        position: relative;
+        left: -22px;
+      }
+      #filename {
+        padding: 8px;
+        font-size: 16px;
+        width: 230px;
+      }
+      label {
+        font-size: 16px;
+      }
+      #onlineWarning {
+        color: red;
+        font-size: 44px;
+        text-align: center;
+      }
+      #coldStorageQR {
+        height: 200px;
+        width: 96vw;
+        margin: 10px auto;
+        text-align: center;
+        position: relative;
+        top: 20px;
+      }
+      .logo {
+        height: 300px;
+        margin: auto;
+      }
+      #app {
+        position: relative;
+        top: 80px;
+        margin: auto;
+        display: block;
+        text-align: center;
+      }
+      img {
+        margin: auto;
+        display: block;
+      }
+      #copymessage {
+        text-align: center;
+      }
+    </style>
+    <script src="./qrcode.min.js"></script>
+    <script src="./jsQR.min.js"></script>
+    <script src="./gif.js"></script>
+    <script src="./index.min.js"></script>
+    <script type="text/javascript" src="./libgif.js"></script>
+    <!-- <script type="text/javascript" src="./rubbable.js"></script> -->
+  </head>
+  <body>
+    <div id="coldStorageQR">
+      <img
+        title="reset and reload page"
+        class="logo"
+        src="coldstorageqr.webp"
+        alt="Cold Storage QR Logo"
+      />
+    </div>
+    <div id="onlineWarning" class="hide">
+      You are online.<br />Please disconnect<br />from the internet<br />to use
+      this app.
+    </div>
+
+    <div id="app">
+      <div id="form-container">
+        <form id="inputForm">
+          <input
+            class="hide"
+            type="text"
+            id="inputText"
+            placeholder="Enter numbers separated by commas"
+          />
+          <label for="inputText">Load Data & Make QR Code:</label><br /><br />
+          <input type="file" id="inputTextFile" accept=".txt,.csv" /><br />
+          <button id="generateQRCodesButton" type="submit">
+            Generate QR Codes
+          </button>
+        </form>
+        <br />
+        <hr />
+        <br />
+        <div style="display: inline-block">
+          <label for="inputGifFile">Load a QR code (gif):</label><br /><br />
+          <input type="file" id="inputGifFile" accept=".gif" />
+        </div>
+      </div>
+      <br /><br />
+      <div id="qrCodeContainer"></div>
+
+      <div style="width: 100%">
+        <button id="downloadGifButton" style="display: none; margin: auto">
+          Download GIF
+        </button>
+        <br /><br />
+      </div>
+      <div id="tooltip" class="tooltip">Text copied to clipboard!</div>
+      <!-- Container for QR codes -->
+      <div id="gif-frames-container"></div>
+      <div>
+        <div id="uploadedGifContainer">
+          <img id="uploadedGif" rel:auto_play="0" style="display: none" />
+        </div>
+        <div>
+          <input id="filename" class="hide" placeholder="Enter filename" />
+          <button
+            id="downloadButton"
+            class="hide"
+            onclick="downloadText(document.getElementById('filename').value);"
+          >
+            Save as text file
+          </button>
+        </div>
+        <textarea
+          id="qrCodeOutput"
+          rows="26"
+          cols="29"
+          class="hide"
+          onclick="copyTextToClipboard('qrCodeOutput')"
+        ></textarea>
+        <p id="copymessage" class="hide">
+          Click in textbox to copy contents to clipboard
+        </p>
+
+        <button id="resetButton" class="hide" onclick="resetAndShowStart()">
+          Reset
+        </button>
+      </div>
+      <script>
+        function setupServiceWorker() {
+          if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+              navigator.serviceWorker
+                .register("./service-worker.js")
+                .then(function (registration) {
+                  console.log(
+                    "ServiceWorker registration successful with scope: ",
+                    registration.scope
+                  );
+                })
+                .catch(function (err) {
+                  console.log("ServiceWorker registration failed: ", err);
+                });
+            });
+          }
+        }
+        function hideBlobImages() {
+          // Get all images on the page
+          var images = document.getElementsByTagName("img");
+
+          // Loop through each image
+          for (var i = 0; i < images.length; i++) {
+            var imageSrc = images[i].src.toLowerCase(); // Convert src to lowercase for case-insensitive comparison
+
+            // Check if the image src starts with "blob:"
+            if (imageSrc.startsWith("blob:")) {
+              // Hide the image by setting its display property to "none"
+              images[i].style.display = "none";
+            }
+          }
+        }
+
+        function addImageToContainer() {
+          var container = document.getElementById("uploadedGifContainer");
+
+          // Creating a new img element
+          var img = document.createElement("img");
+          img.id = "uploadedGif";
+          img.setAttribute("rel", 'auto_play="0"');
+          img.style.display = "none";
+
+          // Append the new img element to the "uploadedGifContainer" div
+          container.appendChild(img);
+        }
+        function resetAndShowStart() {
+          hideBlobImages();
+          document.getElementById("form-container").classList.remove("hide");
+          document.getElementById("downloadGifButton").style.display = "none";
+          document.getElementById("inputTextFile").classList.remove("hide");
+          document.getElementById("resetButton").classList.add("hide");
+          document.getElementById("downloadButton").classList.add("hide");
+          document.getElementById("filename").classList.add("hide");
+          document.getElementById("qrCodeOutput").classList.add("hide");
+          document.getElementById("copymessage").classList.add("hide");
+          addImageToContainer();
+        }
+        function showAll() {
+          document.getElementById("onlineWarning").classList.add("hide");
+          document.getElementById("app").classList.remove("hide");
+        }
+        function hideAll() {
+          document.getElementById("onlineWarning").classList.remove("hide");
+          document.getElementById("app").classList.add("hide");
+        }
+        async function copyTextToClipboard(element) {
+          const text = document.getElementById(element).value;
+          try {
+            await navigator.clipboard.writeText(text);
+            // Show the tooltip
+            const tooltip = document.getElementById("tooltip");
+            tooltip.classList.add("show");
+
+            // Wait for 3 seconds, then fade away
+            setTimeout(() => {
+              tooltip.classList.remove("show");
+              // Optional: After another 0.5 seconds (transition time), hide it
+              setTimeout(() => (tooltip.style.display = "none"), 500);
+            }, 3000);
+          } catch (err) {
+            console.error("Failed to copy: ", err);
+          }
+        }
+      </script>
+      <script>
+        document
+          .getElementById("inputForm")
+          .addEventListener("submit", async function (e) {
+            e.preventDefault();
+            try {
+              const arr = await getInputArray();
+              if (arr.length) {
+                const qrCodes = await createQRCodes(arr);
+                const gif = await createGIF(qrCodes);
+                if (gif) {
+                  document.body.appendChild(gif.image);
+                  // saveGIF(gif.blob, "qrcodes.gif");
+                }
+              }
+            } catch (error) {
+              console.error(error);
+            }
+          });
+
+        async function getInputArray() {
+          const inputText = document.getElementById("inputText").value;
+          const inputFile = document.getElementById("inputTextFile").files[0];
+
+          if (inputText) {
+            return inputText.split(",").map((num) => num.trim());
+          } else if (inputFile) {
+            return new Promise((resolve, reject) => {
+              const fileReader = new FileReader();
+              fileReader.onload = function (e) {
+                let text = e.target.result;
+                text = text.replace(/[\s\n\r]+$/, "");
+                resolve(text.split("\n").map((num) => num.trim()));
+              };
+              fileReader.onerror = reject;
+              fileReader.readAsText(inputFile);
+            });
+          } else {
+            alert("No input provided");
+            return [];
+          }
+        }
+
+        async function createQRCodes(arr) {
+          return arr.map((text) => {
+            // Create an element to hold the QR code
+            const element = document.createElement("div");
+
+            // Generate the QR code
+            new QRCode(element, {
+              text: text,
+              width: 400,
+              height: 400,
+            });
+
+            // The qrcodejs library appends a canvas or table based on browser support
+            // We assume a canvas is created for modern browsers
+            const canvas = element.querySelector("canvas");
+            return canvas;
+          });
+        }
+
+        async function createGIF(qrCodes) {
+          document.getElementById("form-container").classList.add("hide");
+          const gif = new GIF({
+            workers: 2,
+            quality: 10,
+            workerScript: "./gif.worker.js", // Adjust the path as necessary
+            width: 400,
+            height: 400,
+          });
+
+          qrCodes.forEach((canvas) => {
+            if (canvas) {
+              gif.addFrame(canvas, { copy: true, delay: 100 });
+            }
+          });
+
+          return new Promise((resolve, reject) => {
+            gif.on("finished", function (blob) {
+              const image = new Image();
+              const url = URL.createObjectURL(blob);
+              image.src = url;
+              document.body.appendChild(image); // Append or replace the existing GIF image
+
+              // Make the download button visible and set the download link
+              const downloadButton =
+                document.getElementById("downloadGifButton");
+              downloadButton.style.display = "block"; // Show the button
+              downloadButton.onclick = function () {
+                saveGIF(blob, "qr-seednumbers.gif");
+                resetAndShowStart();
+              };
+
+              resolve({ image, blob });
+            });
+            gif.render();
+          });
+        }
+
+        function saveGIF(blob, filename) {
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          // show the startpage setup (no reload, for offline use)
+          resetAndShowStart();
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+          var sWorker = false;
+          async function extractGIFFrames(file, delay = 50) {
+            const objectURL = URL.createObjectURL(file);
+            const img = new Image();
+            img.src = objectURL;
+            await img.decode();
+
+            let frameIndex = 0;
+            const frames = [];
+
+            for (let i = 0; i < img.width; i++) {
+              const frame = await createImageBitmap(
+                img,
+                i * img.width,
+                0,
+                img.width,
+                img.height
+              );
+              frames.push(frame);
+            }
+
+            for (let i = 0; i < frames.length; i++) {
+              const canvas = document.createElement("canvas");
+              canvas.id = `gif-frame-${i + 1}`;
+              canvas.width = img.width;
+              canvas.height = img.height;
+
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(frames[i], 0, 0, canvas.width, canvas.height);
+
+              await new Promise((resolve) =>
+                setTimeout(() => {
+                  document
+                    .getElementById("gif-frames-container")
+                    .appendChild(canvas);
+
+                  resolve(true);
+                }, delay)
+              );
+            }
+
+            URL.revokeObjectURL(objectURL);
+          }
+
+          setupServiceWorker();
+
+          checkOnline();
+        });
+      </script>
+      <script>
+        document
+          .getElementById("inputGifFile")
+          .addEventListener("change", function () {
+            const file = this.files[0];
+            const objectURL = URL.createObjectURL(file);
+
+            const img = document.getElementById("uploadedGif");
+            img.setAttribute("rel:animated_src", objectURL);
+
+            const sup1 = new SuperGif({ gif: img });
+            sup1.load(() => {
+              // After the GIF is loaded, you can access its frames
+              const totalFrames = sup1.get_length();
+
+              for (let i = 0; i < totalFrames; i++) {
+                sup1.move_to(i);
+                // Process each frame
+                processFrame(sup1.get_canvas(), i, totalFrames, img);
+              }
+              const outputTextarea = document.getElementById("qrCodeOutput");
+              outputTextarea.value = outputTextarea.value.replace(
+                /[\s\n\r]+$/,
+                ""
+              );
+            });
+          });
+
+        async function processFrame(
+          canvas,
+          frameIndex,
+          totalFrames,
+          imgElement
+        ) {
+          const ctx = canvas.getContext("2d");
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const qrCode = jsQR(
+            imageData.data,
+            imageData.width,
+            imageData.height
+          );
+
+          if (qrCode) {
+            // Fetch the textarea element
+            var outputTextarea = document.getElementById("qrCodeOutput");
+            outputTextarea.classList.remove("hide");
+            document.getElementById("copymessage").classList.remove("hide");
+            // Append the new QR code data to the textarea, one output per line
+            outputTextarea.value += `${qrCode.data}\n`;
+          }
+
+          // Hide the GIF after the last frame has been processed
+
+          canvas.remove();
+          document.getElementById("form-container").classList.add("hide");
+          document.getElementById("resetButton").classList.remove("hide");
+          document.getElementById("downloadButton").classList.remove("hide");
+          document.getElementById("filename").classList.remove("hide");
+        }
+      </script>
+      <script>
+        function downloadText(myfilename) {
+          // if myfilename has a file extension on it, remove it
+          if (myfilename != "") {
+            myfilename = myfilename.replace(/\.[^/.]+$/, "");
+          }
+
+          const filename = myfilename ? myfilename : "output";
+          // Get the content of the textarea
+          const text = document.getElementById("qrCodeOutput").value;
+
+          // Create a Blob from the textarea content
+          const blob = new Blob([text], { type: "text/plain" });
+
+          // Create an Object URL for the Blob
+          const url = URL.createObjectURL(blob);
+
+          // Create a temporary anchor element and trigger the download
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename + ".txt"; // Specify the name of the file to be downloaded
+          document.body.appendChild(a); // Append the anchor to the body
+          a.click(); // Simulate a click on the anchor to trigger the download
+
+          // Cleanup: remove the anchor from the body and revoke the Object URL
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      </script>
+      <script>
+        document
+          .getElementById("inputTextFile")
+          .addEventListener("change", function () {
+            if (this.files.length > 0) {
+              // A file has been selected
+              // document.body.style.backgroundColor = "#e0e0e0";
+              document.getElementById("inputTextFile").classList.add("hide");
+            }
+          });
+      </script>
+      <script>
+        function checkOnline() {
+          if (navigator.onLine) {
+            hideAll();
+          } else {
+            showAll();
+          }
+        }
+        // Listen for online status
+        window.addEventListener("online", function (e) {
+          checkOnline();
+        });
+        window.addEventListener("offline", function (e) {
+          checkOnline();
+        });
+      </script>
+    </div>
+  </body>
+</html>
