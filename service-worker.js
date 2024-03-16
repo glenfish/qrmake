@@ -10,7 +10,7 @@ const urlsToCache = [
   './service-worker.js'
 ];
 
-// Install event - cache files
+// Install event - cache files 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
