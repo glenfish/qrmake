@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V3';
+const CACHE_NAME = 'V5';
 const urlsToCache = [
   'index.html',
   'gif.js',
