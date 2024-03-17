@@ -610,6 +610,7 @@
           }
 
           setupServiceWorker();
+          checkOnline();
         });
       </script>
       <script>
@@ -750,7 +751,9 @@
           // Listen for messages from the service worker
           navigator.serviceWorker.addEventListener("message", function (event) {
             if (event.data.message === "offlineReady") {
-              checkOnline();
+              alert(
+                "All files have loaded into cache - you may now go offline"
+              );
             }
           });
         }
