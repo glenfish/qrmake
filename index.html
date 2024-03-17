@@ -338,7 +338,7 @@
           if ("serviceWorker" in navigator) {
             window.addEventListener("load", function () {
               navigator.serviceWorker
-                .register("./service-worker.js")
+                .register("./service-worker-2.js")
                 .then(function (registration) {
                   console.log(
                     "ServiceWorker registration successful with scope: ",
@@ -622,7 +622,7 @@
             URL.revokeObjectURL(objectURL);
           }
 
-          // setupServiceWorker();
+          setupServiceWorker();
 
           checkOnline();
         });
