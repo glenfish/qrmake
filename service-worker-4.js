@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V35';
+const CACHE_NAME = 'v1';
 const urlsToCache = [
   'index.html',
   'gif.js',
@@ -6,8 +6,7 @@ const urlsToCache = [
   'jsQR.min.js',
   'index.min.js',
   'libgif.js',
-  'gif.worker.js',
-  'service-worker.js'
+  'gif.worker.js'
 ];
 
 let cacheReady = false;
