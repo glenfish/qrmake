@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V14';
+const CACHE_NAME = 'V15';
 const urlsToCache = [
   'index.html',
   'gif.js',
@@ -113,4 +113,29 @@ verifyCache()
     });
   })
   .catch(error => console.error('Cache verification failed:', error));
+
+  self.addEventListener('message', event => {
+    if (event.data.action === 'verifyCache') {
+      verifyCache()
+        .then(() => {
+          console.log('Cache verification successful after coming back online');
+          // Optionally, notify all client pages
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                message: 'offlineReady',
+              });
+            });
+          });
+        })
+        .catch(error => console.error('Cache verification failed:', error));
+    }
+  });
+  
+
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    window.addEventListener('online', () => {
+      navigator.serviceWorker.controller.postMessage({action: 'verifyCache'});
+    });
+  }
 
