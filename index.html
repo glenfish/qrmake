@@ -223,6 +223,18 @@
         top: 0px;
         background-color: gray;
       }
+      #filesLoading {
+        color: black;
+        font-size: 44px;
+        text-align: center;
+        margin-top: 100px;
+      }
+      #filesLoaded {
+        color: green;
+        font-size: 44px;
+        text-align: center;
+        margin-top: 100px;
+      }
     </style>
     <script src="./qrcode.min.js"></script>
     <script src="./jsQR.min.js"></script>
@@ -243,6 +255,12 @@
     <div id="onlineWarning" class="hide">
       You are online.<br />Please disconnect<br />from the internet<br />to use
       this app
+    </div>
+    <div id="filesLoading" class="">
+      Please wait while<br />files are loading.
+    </div>
+    <div id="filesLoaded" class="hide">
+      OK, you may turn<br />off your wifi now.
     </div>
 
     <div id="app">
@@ -400,10 +418,14 @@
 
         function showAll() {
           document.getElementById("onlineWarning").classList.add("hide");
+          document.getElementById("filesLoading").classList.add("hide");
+          document.getElementById("filesLoaded").classList.add("hide");
           document.getElementById("app").classList.remove("hide");
         }
         function hideAll() {
           document.getElementById("onlineWarning").classList.remove("hide");
+          document.getElementById("filesLoading").classList.remove("hide");
+          document.getElementById("filesLoaded").classList.add("hide");
           document.getElementById("app").classList.add("hide");
         }
         async function copyTextToClipboard(element) {
@@ -751,9 +773,7 @@
           // Listen for messages from the service worker
           navigator.serviceWorker.addEventListener("message", function (event) {
             if (event.data.message === "offlineReady") {
-              alert(
-                "All files have loaded into cache - you may now go offline"
-              );
+              document.getElementById("filesLoaded").classList.remove("hide");
             }
           });
         }
