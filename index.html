@@ -770,19 +770,17 @@
               console.log("Service Worker Registered", registration);
             });
 
-          // Listen for messages from the service worker
+          var isOfflineReady = false;
           navigator.serviceWorker.addEventListener("message", function (event) {
-            let isOfflineReady = false;
             if (event.data.message === "offlineReady") {
               isOfflineReady = true;
-            }
-            if (isOfflineReady) {
               console.log("Offline ready");
               document.getElementById("filesLoading").classList.add("hide");
               document.getElementById("filesLoaded").classList.remove("hide");
-            } else {
+            } else if (event.data.message === "offlineNotReady") {
               document.getElementById("filesLoading").classList.remove("hide");
-              // reload after 5 seconds
+            } else {
+              isOfflineReady = false;
               setTimeout(function () {
                 location.reload();
               }, 5000);
