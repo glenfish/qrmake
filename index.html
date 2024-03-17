@@ -256,7 +256,7 @@
       You are online.<br />Please disconnect<br />from the internet<br />to use
       this app
     </div>
-    <div id="filesLoading" class="">
+    <div id="filesLoading" class="hide">
       Please wait while<br />files are loading.
     </div>
     <div id="filesLoaded" class="hide">
@@ -776,6 +776,12 @@
               console.log("Offline ready");
               document.getElementById("filesLoading").classList.add("hide");
               document.getElementById("filesLoaded").classList.remove("hide");
+            } else {
+              document.getElementById("filesLoading").classList.remove("hide");
+              // reload after 10 seconds
+              setTimeout(function () {
+                window.location.reload();
+              }, 10000);
             }
           });
         }
