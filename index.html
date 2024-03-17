@@ -762,48 +762,23 @@
         });
       </script>
       <script>
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker
-            .register("service-worker-4.js")
-            .then(function (registration) {
-              console.log("Service Worker Registered", registration);
-            });
-
-          var isOfflineReady = false;
-          navigator.serviceWorker.addEventListener("message", function (event) {
-            if (event.data.message === "offlineReady") {
-              isOfflineReady = true;
-              console.log("Offline ready");
-              document.getElementById("filesLoading").classList.add("hide");
-              document.getElementById("filesLoaded").classList.remove("hide");
-            } else if (event.data.message === "offlineNotReady") {
-              document.getElementById("filesLoading").classList.remove("hide");
-            } else {
-              isOfflineReady = false;
-              setTimeout(function () {
-                location.reload();
-              }, 5000);
-            }
-          });
-
-          // Listen for messages from the service worker
-          navigator.serviceWorker.addEventListener("message", function (event) {
-            let isOfflineReady = false;
-            if (event.data.message === "offlineReady") {
-              isOfflineReady = true;
-            }
-            if (isOfflineReady) {
-              console.log("Offline ready");
-              document.getElementById("filesLoading").classList.add("hide");
-              document.getElementById("filesLoaded").classList.remove("hide");
-            } else {
-              // reload after 5 seconds
-              setTimeout(function () {
-                location.reload();
-              }, 5000);
-            }
-          });
-        }
+        // Listen for messages from the service worker
+        navigator.serviceWorker.addEventListener("message", function (event) {
+          let isOfflineReady = false;
+          if (event.data.message === "offlineReady") {
+            isOfflineReady = true;
+          }
+          if (isOfflineReady) {
+            console.log("Offline ready");
+            document.getElementById("filesLoading").classList.add("hide");
+            document.getElementById("filesLoaded").classList.remove("hide");
+          } else {
+            // reload after 5 seconds
+            setTimeout(function () {
+              location.reload();
+            }, 5000);
+          }
+        });
       </script>
     </div>
   </body>
