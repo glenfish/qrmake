@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V23';
+const CACHE_NAME = 'V30';
 const urlsToCache = [
   'index.html',
   'gif.js',
@@ -73,57 +73,64 @@ self.addEventListener('fetch', event => {
   );
 });
 
-
-
 function verifyCache() {
-  return caches.open(CACHE_NAME)
-    .then(cache => {
-      return cache.keys().then(keys => {
+  return new Promise((resolve, reject) => {
+    caches.open(CACHE_NAME)
+      .then(cache => cache.keys())
+      .then(keys => {
         const cachedUrls = keys.map(request => request.url);
         const missingUrls = urlsToCache.filter(url => !cachedUrls.includes(url));
 
-        if (missingUrls.length > 0) {
-          return cache.addAll(missingUrls).then(() => {
-            console.log('Missing URLs cached successfully.');
-            cacheReady = true;
-            // Return a message indicating success
-            return { message: 'offlineReady' };
-          }).catch(error => {
-            console.error('Failed to cache missing URLs:', error);
-            // Return a message indicating failure
-            throw { message: 'offlineNotReady', error: error.toString() };
-          });
+        if (missingUrls.length === 0) {
+          resolve();
         } else {
-          console.log('No missing URLs. Cache is ready.');
-          // Return a message indicating the cache is already ready
-          return { message: 'offlineReady' };
+          // Clear the cache and retry caching missing files
+          caches.delete(CACHE_NAME)
+            .then(() => caches.open(CACHE_NAME))
+            .then(cache => cache.addAll(missingUrls))
+            .then(() => {
+              cacheReady = true;
+              resolve();
+            })
+            .catch(error => reject(error));
         }
-      });
-    })
-    .catch(error => {
-      console.error('Cache verification failed:', error);
-      // Return a message indicating failure
-      return { message: 'offlineNotReady', error: error.toString() };
-    });
+      })
+      .catch(error => reject(error));
+  });
 }
 
+// Perform initial cache verification
+verifyCache()
+  .then(() => {
+    console.log('Cache verification successful');
+    // Notify all client pages
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          message: 'offlineReady',
+        });
+      });
+    });
+  })
+  .catch(error => console.error('Cache verification failed:', error));
 
-// Adjusted event listener for message event to use the new logic
-self.addEventListener('message', event => {
+ self.addEventListener('message', event => {
   if (event.data.action === 'verifyCache') {
     verifyCache()
-      .then(messageToSend => {
-        // Use the message determined by the verifyCache function's logic
-        console.log(messageToSend.message);
+      .then(() => {
+        console.log('Cache verification successful after coming back online');
+        // Notify all client pages about being ready for offline
         self.clients.matchAll().then(clients => {
           clients.forEach(client => {
-            client.postMessage(messageToSend);
+            client.postMessage({
+              message: 'offlineReady',
+            });
           });
         });
       })
       .catch(error => {
-        console.error('Error after verifying cache:', error);
-        // Send a failure message if needed
+        console.error('Cache verification failed:', error);
+        // Notify all client pages about NOT being ready for offline
         self.clients.matchAll().then(clients => {
           clients.forEach(client => {
             client.postMessage({
@@ -135,7 +142,6 @@ self.addEventListener('message', event => {
       });
   }
 });
-
   
 
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
