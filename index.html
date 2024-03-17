@@ -239,7 +239,6 @@
         class="logo"
         src="coldstorageqr.webp"
         alt="Cold Storage QR Logo"
-        onclick="cancelAndShowStart(event)"
       />
     </div>
     <div id="onlineWarning" class="hide">
@@ -266,13 +265,6 @@
           <textarea id="myUploadedText" class="hide" readonly></textarea>
           <button id="generateQRCodesButton" type="submit" class="hide">
             CREATE QR
-          </button>
-          <button
-            id="cancelButton"
-            class="hide"
-            onclick="cancelAndShowStart(event)"
-          >
-            CANCEL
           </button>
         </form>
         <br />
@@ -380,11 +372,7 @@
           // Append the new img element to the "uploadedGifContainer" div
           container.appendChild(img);
         }
-        function cancelAndShowStart(event) {
-          event.preventDefault();
-          document.getElementById("inputForm").submit();
-          resetAndShowStart();
-        }
+
         function resetAndShowStart() {
           deleteBlobImages();
           document.getElementById("form-container").classList.remove("hide");
@@ -404,7 +392,7 @@
           document
             .getElementById("generateQRCodesButton")
             .classList.add("hide");
-          document.getElementById("cancelButton").classList.add("hide");
+
           document.getElementById("myUploadedText").value = "";
           document.getElementById("myUploadedText").classList.add("hide");
 
@@ -727,7 +715,7 @@
               document
                 .getElementById("generateQRCodesButton")
                 .classList.remove("hide");
-              document.getElementById("cancelButton").classList.remove("hide");
+
               document
                 .getElementById("inputTextFileLabel")
                 .classList.add("hide");
