@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V18';
+const CACHE_NAME = 'V19';
 const urlsToCache = [
   'index.html',
   'gif.js',
@@ -119,7 +119,7 @@ verifyCache()
       verifyCache()
         .then(() => {
           console.log('Cache verification successful after coming back online');
-          // Optionally, notify all client pages
+          // Notify all client pages about being ready for offline
           self.clients.matchAll().then(clients => {
             clients.forEach(client => {
               client.postMessage({
@@ -128,7 +128,18 @@ verifyCache()
             });
           });
         })
-        .catch(error => console.error('Cache verification failed:', error));
+        .catch(error => {
+          console.error('Cache verification failed:', error);
+          // Notify all client pages about NOT being ready for offline
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                message: 'offlineNotReady',
+                error: error.toString(),
+              });
+            });
+          });
+        });
     }
   });
   
