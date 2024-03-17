@@ -610,8 +610,6 @@
           }
 
           setupServiceWorker();
-
-          checkOnline();
         });
       </script>
       <script>
@@ -740,6 +738,22 @@
         window.addEventListener("offline", function (e) {
           checkOnline();
         });
+      </script>
+      <script>
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker
+            .register("service-worker-3.js")
+            .then(function (registration) {
+              console.log("Service Worker Registered", registration);
+            });
+
+          // Listen for messages from the service worker
+          navigator.serviceWorker.addEventListener("message", function (event) {
+            if (event.data.message === "offlineReady") {
+              checkOnline();
+            }
+          });
+        }
       </script>
     </div>
   </body>

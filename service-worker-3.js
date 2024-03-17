@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V9';
+const CACHE_NAME = 'V10';
 const urlsToCache = [
   'index.html',
   'gif.js',
@@ -101,5 +101,16 @@ function verifyCache() {
 
 // Perform initial cache verification
 verifyCache()
-  .then(() => console.log('Cache verification successful'))
+  .then(() => {
+    console.log('Cache verification successful');
+    // Notify all client pages
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          message: 'offlineReady',
+        });
+      });
+    });
+  })
   .catch(error => console.error('Cache verification failed:', error));
+
