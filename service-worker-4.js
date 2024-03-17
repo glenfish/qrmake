@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V21';
+const CACHE_NAME = 'V22';
 const urlsToCache = [
   'index.html',
   'gif.js',
@@ -73,31 +73,7 @@ self.addEventListener('fetch', event => {
   );
 });
 
-function verifyCache() {
-  return new Promise((resolve, reject) => {
-    caches.open(CACHE_NAME)
-      .then(cache => cache.keys())
-      .then(keys => {
-        const cachedUrls = keys.map(request => request.url);
-        const missingUrls = urlsToCache.filter(url => !cachedUrls.includes(url));
 
-        if (missingUrls.length === 0) {
-          resolve();
-        } else {
-          // Clear the cache and retry caching missing files
-          caches.delete(CACHE_NAME)
-            .then(() => caches.open(CACHE_NAME))
-            .then(cache => cache.addAll(missingUrls))
-            .then(() => {
-              cacheReady = true;
-              resolve();
-            })
-            .catch(error => reject(error));
-        }
-      })
-      .catch(error => reject(error));
-  });
-}
 
 function verifyCache() {
   return new Promise((resolve, reject) => {
