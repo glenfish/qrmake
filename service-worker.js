@@ -1,13 +1,13 @@
-const CACHE_NAME = 'V2';
+const CACHE_NAME = 'V3';
 const urlsToCache = [
-  '/index.html',
-  '/gif.js',
-  '/qrcode.min.js',
-  '/jsQR.min.js',
-  '/index.min.js',
-  '/libgif.js',
-  './gif.worker.js',
-  './service-worker.js'
+  'index.html',
+  'gif.js',
+  'qrcode.min.js',
+  'jsQR.min.js',
+  'index.min.js',
+  'libgif.js',
+  'gif.worker.js',
+  'service-worker.js'
 ];
 
 // Install event - cache files 
