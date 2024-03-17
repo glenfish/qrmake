@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V22';
+const CACHE_NAME = 'V23';
 const urlsToCache = [
   'index.html',
   'gif.js',
@@ -76,40 +76,37 @@ self.addEventListener('fetch', event => {
 
 
 function verifyCache() {
-  return new Promise((resolve, reject) => {
-    caches.open(CACHE_NAME)
-      .then(cache => cache.keys())
-      .then(keys => {
+  return caches.open(CACHE_NAME)
+    .then(cache => {
+      return cache.keys().then(keys => {
         const cachedUrls = keys.map(request => request.url);
         const missingUrls = urlsToCache.filter(url => !cachedUrls.includes(url));
-        let messageToSend = { message: 'offlineReady' }; // Default message
 
-        if (missingUrls.length === 0) {
-          // Even if there are no missing URLs, we might want to communicate the cache's status
-          console.log('No missing URLs. Cache is ready.');
+        if (missingUrls.length > 0) {
+          return cache.addAll(missingUrls).then(() => {
+            console.log('Missing URLs cached successfully.');
+            cacheReady = true;
+            // Return a message indicating success
+            return { message: 'offlineReady' };
+          }).catch(error => {
+            console.error('Failed to cache missing URLs:', error);
+            // Return a message indicating failure
+            throw { message: 'offlineNotReady', error: error.toString() };
+          });
         } else {
-          // If there are missing URLs, attempt to cache them
-          return caches.delete(CACHE_NAME)
-            .then(() => caches.open(CACHE_NAME))
-            .then(cache => cache.addAll(missingUrls))
-            .then(() => {
-              console.log('Missing URLs cached successfully.');
-              cacheReady = true;
-            })
-            .catch(error => {
-              messageToSend = { message: 'offlineNotReady', error: error.toString() };
-              reject(error);
-            });
+          console.log('No missing URLs. Cache is ready.');
+          // Return a message indicating the cache is already ready
+          return { message: 'offlineReady' };
         }
-        // Always resolve to send a message about the cache status
-        resolve(messageToSend);
-      })
-      .catch(error => {
-        console.error('Cache verification failed:', error);
-        reject(error);
       });
-  });
+    })
+    .catch(error => {
+      console.error('Cache verification failed:', error);
+      // Return a message indicating failure
+      return { message: 'offlineNotReady', error: error.toString() };
+    });
 }
+
 
 // Adjusted event listener for message event to use the new logic
 self.addEventListener('message', event => {
