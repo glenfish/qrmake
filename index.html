@@ -773,6 +773,8 @@
           // Listen for messages from the service worker
           navigator.serviceWorker.addEventListener("message", function (event) {
             if (event.data.message === "offlineReady") {
+              console.log("Offline ready");
+              document.getElementById("filesLoading").classList.add("hide");
               document.getElementById("filesLoaded").classList.remove("hide");
             }
           });
