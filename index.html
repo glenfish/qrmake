@@ -393,6 +393,8 @@
 
         function resetAndShowStart() {
           deleteBlobImages();
+          document.getElementById("inputGifFile").value = "";
+          document.getElementById("gif-frames-container").innerHTML = "";
           document.getElementById("form-container").classList.remove("hide");
           document.getElementById("downloadGifButton").classList.add("hide");
           document.getElementById("inputTextFile").classList.remove("hide");
