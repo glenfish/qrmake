@@ -1,4 +1,4 @@
-const CACHE_NAME = 'V7';
+const CACHE_NAME = 'v2';
 const urlsToCache = [
   'index.html',
   'gif.js',
@@ -6,58 +6,146 @@ const urlsToCache = [
   'jsQR.min.js',
   'index.min.js',
   'libgif.js',
-  'gif.worker.js',
-  'service-worker.js'
+  'gif.worker.js'
 ];
 
-// Install event - cache files 
+let cacheReady = false;
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+      .then(cache => cache.addAll(urlsToCache))
+      .then(() => {
+        cacheReady = true;
+        self.skipWaiting();
       })
   );
 });
 
-// Fetch event - serve files from cache or fetch from network
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
+      );
+    })
+  );
+});
+
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Cache hit - return response
         if (response) {
           return response;
         }
 
-        // IMPORTANT: Clone the request. A request is a stream and
-        // can only be consumed once. Since we are consuming this
-        // once by cache and once by the browser for fetch, we need
-        // to clone the response.
-        var fetchRequest = event.request.clone();
+        if (!cacheReady) {
+          // Delay the fetch until cache is ready
+          return new Promise(resolve => {
+            const checkCache = () => {
+              if (cacheReady) {
+                resolve(fetch(event.request));
+              } else {
+                setTimeout(checkCache, 100);
+              }
+            };
+            checkCache();
+          });
+        }
 
-        return fetch(fetchRequest).then(
-          function(response) {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+        const fetchRequest = event.request.clone();
 
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            var responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
+        return fetch(fetchRequest).then(response => {
+          if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
-        );
+
+          const responseToCache = response.clone();
+
+          caches.open(CACHE_NAME)
+            .then(cache => cache.put(event.request, responseToCache));
+
+          return response;
+        });
       })
   );
 });
+
+function verifyCache() {
+  return new Promise((resolve, reject) => {
+    caches.open(CACHE_NAME)
+      .then(cache => cache.keys())
+      .then(keys => {
+        const cachedUrls = keys.map(request => request.url);
+        const missingUrls = urlsToCache.filter(url => !cachedUrls.includes(url));
+
+        if (missingUrls.length === 0) {
+          resolve();
+        } else {
+          // Clear the cache and retry caching missing files
+          caches.delete(CACHE_NAME)
+            .then(() => caches.open(CACHE_NAME))
+            .then(cache => cache.addAll(missingUrls))
+            .then(() => {
+              cacheReady = true;
+              resolve();
+            })
+            .catch(error => reject(error));
+        }
+      })
+      .catch(error => reject(error));
+  });
+}
+
+// Perform initial cache verification
+verifyCache()
+  .then(() => {
+    console.log('Cache verification successful');
+    // Notify all client pages
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          message: 'offlineReady',
+        });
+      });
+    });
+  })
+  .catch(error => console.error('Cache verification failed:', error));
+
+ self.addEventListener('message', event => {
+  if (event.data.action === 'verifyCache') {
+    verifyCache()
+      .then(() => {
+        console.log('Cache verification successful after coming back online');
+        // Notify all client pages about being ready for offline
+        self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              message: 'offlineReady',
+            });
+          });
+        });
+      })
+      .catch(error => {
+        console.error('Cache verification failed:', error);
+        // Notify all client pages about NOT being ready for offline
+        self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              message: 'offlineNotReady',
+              error: error.toString(),
+            });
+          });
+        });
+      });
+  }
+});
+  
+
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    window.addEventListener('online', () => {
+      navigator.serviceWorker.controller.postMessage({action: 'verifyCache'});
+    });
+  }
+
